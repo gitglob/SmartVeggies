@@ -110,7 +110,7 @@ int ReadWaterLevel() {
 //Opens and closes the window for a certain amount of time
 //Recieves the amount of seconds you want to open the window (parameter given in seconds)
 void OpenWindow(int opTime) {
-  window.write(90);  //Open the window
+  window.write(180);  //Open the window
   delay(opTime*1000);
-  window.write(110);  //Close the window
+  window.write(80);  //Close the window
 }
