@@ -1,3 +1,17 @@
+//WiFi and Thingspeak
+#include <ESP8266WiFi.h>
+#include <ThingSpeak.h>
+
+// Replace with your network details
+const char* ssid = "Memo";
+const char* password = "12345678";
+WiFiClient client;
+
+unsigned long channelID = 1710181; //your channel
+const char * myWriteAPIKey = "1FZ6IC3WPT4UIVLO"; // your WRITE API key
+const char* server = "api.thingspeak.com";
+
+
 //Temperature and humidity sensor
 #include "DHT.h"
 #define DHTPIN 5    //GPIO5 D1
@@ -15,7 +29,7 @@ int waterPercentage = 0;
 int MoistLevel = 0;
 int MoistPercentage = 0;
 #define WetThres 450
-#define DryThres 100 
+#define DryThres 100
 
 //Servo for opening and closing the window
 #include <Servo.h>
@@ -30,7 +44,7 @@ int servoPin = 2;     //GPIO2 D4 Signal for the servomotor
 DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
-  //pinMode(blue, OUTPUT);  
+  //pinMode(blue, OUTPUT);
   pinMode(DHTPIN, INPUT);
   pinMode(AnalogInput, INPUT);
   pinMode(ReadWatLev, OUTPUT);
@@ -41,35 +55,80 @@ void setup() {
 
   Serial.begin(115200);
   dht.begin();
-  Serial.println("Setup is complete");
+  //Serial.println("Setup is complete");
+
+  //Wifi setup
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi connected");
+
+
+
+
 }
 
 //-----------------------------------------------------------------------Void Loop------------------------------------------------
 void loop() {
-  Serial.println("Hello the code is running now :D");
-  //Reading the humidity and temperature
-  delay(2000);
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
+  //WiFi things
+  ThingSpeak.begin(client);
+  if (client.connect(server, 80)) {
 
-  if (isnan(h) || isnan(t)) {
-    Serial.println("Failed to read from DHT sensor!");
-    return;
+    // Measure Signal Strength (RSSI) of Wi-Fi connection
+    long rssi = WiFi.RSSI();
+    Serial.print("RSSI: ");
+    Serial.println(rssi);
+    ThingSpeak.setField(5, rssi);
+
+    //Read the sensors
+    //Reading the humidity and temperature
+    delay(2000);
+    float h = dht.readHumidity();
+    float t = dht.readTemperature();
+
+    if (isnan(h) || isnan(t)) {
+      Serial.println("Failed to read from DHT sensor!");
+      return;
+    }
+    Serial.println((String)"Humidity: " + h + " %\t");
+    Serial.println((String)"Temperature: " + t + 0xC2 + 0xB0 + "C");
+
+    delay(5000);
+
+    //Reading the water level
+    ReadWaterLevel();
+    Serial.println((String)"Water Level is " + waterPercentage + "%");
+
+    delay(5000);
+
+    //Reading the moisture
+    ReadMoisture();
+    Serial.println((String)"Moisture is " + MoistLevel + "%");
+
+
+    ThingSpeak.setField(1, t);    //Temperature
+    ThingSpeak.setField(2, h);    //Humidity
+    ThingSpeak.setField(3, MoistLevel);    //Soil Moisture
+    ThingSpeak.setField(4, waterPercentage);    //Water deposit
+
+
+    ThingSpeak.writeFields(channelID, myWriteAPIKey);
   }
-  Serial.println((String)"Humidity: " + h + " %\t");
-  Serial.println((String)"Temperature: " + t + 0xC2 + 0xB0 + "C");
+  client.stop();
 
-  delay(5000);
-    
-  //Reading the water level
-  ReadWaterLevel();
-  Serial.println((String)"Water Level is " + waterPercentage + "%");
+  // wait and then post again
+  delay(20000);
 
-  delay(5000);
+  //  Serial.println("Hello the code is running now :D");
 
-  //Reading the moisture
-  ReadMoisture();
-  Serial.println((String)"Moisture is " + MoistLevel + "%");
+
 
   delay(5000);
   Serial.println("Opening window");
@@ -82,8 +141,8 @@ void loop() {
   delay(10000);
   Serial.println("Turning OFF the water pump");
   digitalWrite(pump, LOW);
-  
-  
+
+
 
 
 }
@@ -117,6 +176,6 @@ int ReadWaterLevel() {
 //Recieves the amount of seconds you want to open the window (parameter given in seconds)
 void OpenWindow(int opTime) {
   window.write(180);  //Open the window
-  delay(opTime*1000);
+  delay(opTime * 1000);
   window.write(80);  //Close the window
 }
