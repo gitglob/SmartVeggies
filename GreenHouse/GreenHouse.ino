@@ -11,7 +11,7 @@ int waterPercentage = 0;
 #define AnalogInput A0          //ESP only has one analog input gonna be used for moisture and water level
 
 //Moisture sensor
-#define ReadMoist 0     //GPIO0 D3  Turns on and off the moisture sensor
+#define ReadMoist 12     //D6  GPIO12  Turns on and off the moisture sensor
 int MoistLevel = 0;
 int MoistPercentage = 0;
 #define WetThres 450
@@ -23,7 +23,7 @@ Servo window;
 int servoPin = 2;     //GPIO2 D4 Signal for the servomotor
 
 //Water pump (to water plants)
-#define pump 14     //GPIO14 D5  Turns on and off the pump/relay
+#define pump 15     //D8  GPIO15  Turns on and off the pump/relay
 
 
 
@@ -35,6 +35,7 @@ void setup() {
   pinMode(AnalogInput, INPUT);
   pinMode(ReadWatLev, OUTPUT);
   pinMode(ReadMoist, OUTPUT);
+  pinMode(pump, OUTPUT);
   window.attach(servoPin);
 
 
@@ -70,12 +71,17 @@ void loop() {
   ReadMoisture();
   Serial.println((String)"Moisture is " + MoistLevel + "%");
 
-
   delay(5000);
   Serial.println("Opening window");
   OpenWindow(7);
   Serial.println("Closing window");
   delay(5000);
+
+  Serial.println("Turning ON the water pump");
+  digitalWrite(pump, HIGH);
+  delay(10000);
+  Serial.println("Turning OFF the water pump");
+  digitalWrite(pump, LOW);
   
   
 
