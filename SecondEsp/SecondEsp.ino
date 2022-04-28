@@ -1,3 +1,6 @@
+// COM 8 -> right usb
+// this piece of code handles the moisture levels and sends a signal to the pump
+
 //WiFi and Thingspeak
 #include <ESP8266WiFi.h>
 #include <ThingSpeak.h>
@@ -16,7 +19,7 @@ const char* server = "api.thingspeak.com";
 
 //Moisture sensor
 //#define ReadMoist 13     //D7  GPIO13  Turns on and off the moisture sensor
-int MoistLevel = 0;
+float MoistLevel = 0;
 int MoistPercentage = 0;
 #define WetThres 450
 #define DryThres 100
@@ -87,8 +90,11 @@ void loop() {
   //Logic and greenhouse functionality---------------------------------------------------------------------------------------
 
   //Soil moisture
-  if (MoistLevel >= 1000) {
-    PumpWater(9);
+  // acceptable levels of moisture : 23~35 %
+  // if the moisture drops below 23, we should water the plant 
+  // each pump session raises the moisture x%
+  if (MoistLevel < 40) { 
+    PumpWater(1.5);
     delay(5000);
   }
 
@@ -105,7 +111,10 @@ int ReadMoisture() {
     MoistLevel = MoistLevel + analogRead(AnalogInput);
     delay(1);
   }
+  // average over 100 measurements
   MoistLevel = MoistLevel / 100.0;
+  // convert to a percentage (10-bit value)
+  MoistLevel = (MoistLevel / 1023)*100;
   delay(30);
   //digitalWrite(ReadMoist, LOW);
   return MoistLevel;
