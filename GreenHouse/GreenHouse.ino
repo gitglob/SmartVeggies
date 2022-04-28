@@ -37,14 +37,19 @@ int servoPin = 2;     //GPIO2 D4 Signal for the servomotor
 DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
+  Serial.begin(115200);
+  delay(1000);
+
   //pinMode(blue, OUTPUT);
   pinMode(DHTPIN, INPUT);
   pinMode(AnalogInput, INPUT);
   //pinMode(ReadWatLev, OUTPUT);
+
+  // initialize the servo
+  Serial.println("Initializing servo...");
   window.attach(servoPin);
+  window.write(90);  //Initial position of the window
 
-
-  Serial.begin(115200);
   dht.begin();
   //Serial.println("Setup is complete");
 
@@ -110,28 +115,37 @@ void loop() {
 
     //Write to Thingspeak
     ThingSpeak.writeFields(channelID, myWriteAPIKey);
+
+
+
+
+    //Logic and greenhouse functionality---------------------------------------------------------------------------------------
+    //Water deposit
+    if (waterPercentage <= 20) {
+      Serial.println("Please refill the water deposit");
+      delay(5000);
+    }
+
+    //Humidity and temperature
+    if (t >= 20 || h >= 35) {
+      OpenWindow(7);
+      delay(5000);
+    }
+
+
+
+
+
+
+
+
   }
   client.stop();
 
   // wait and then post again
   delay(20000);
 
-  //Logic and greenhouse functionality---------------------------------------------------------------------------------------
-  //Water deposit
-  if (waterPercentage <= 20) {
-    Serial.println("Please refill the water deposit");
-    delay(5000);
-  }
-
-  //Humidity and temperature
-  if (t >= 26 || h >= 35) {
-    Serial.println("Opening window");
-    OpenWindow(7);
-    Serial.println("Closing window");
-    delay(5000);
-  }
-
-  delay(5000);
+  //  delay(5000);
   Serial.println("Ended the loop");
 
 
@@ -145,7 +159,7 @@ void loop() {
 int ReadWaterLevel() {
   //digitalWrite(ReadWatLev, HIGH);
   WaterLevel = analogRead(AnalogInput);
-  waterPercentage = (int)((((double)WaterLevel) / 512) * 100.0);
+  waterPercentage = (int)((((double)WaterLevel) / 1023) * 100.0);
   //digitalWrite(ReadWatLev, LOW);
   return waterPercentage;
 }
@@ -153,8 +167,11 @@ int ReadWaterLevel() {
 //Opens and closes the window for a certain amount of time
 //Recieves the amount of seconds you want to open the window (parameter given in seconds)
 void OpenWindow(int opTime) {
+  Serial.println("Opening the window...");
   window.write(180);  //Open the window
   delay(opTime * 1000);
-  window.write(80);  //Close the window
+  window.write(90);  //Close the window
+  Serial.println("Closing the window...");
+  delay(1000);
 }
 //}
