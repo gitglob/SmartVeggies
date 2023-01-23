@@ -1,5 +1,5 @@
 # SmartVeggies
-A smart Greenhouse with Thingspeak connectivity using an ESP32 microcontroller
+A smart Greenhouse with Thingspeak connectivity using an Arduino microcontroller
 
 ## Motivation
 Project for the DTU IoT course (34315): IoT, application and infrastructure development.
